@@ -424,6 +424,21 @@ class App:
         if not self.buffer:
             messagebox.showinfo("Экспорт", "Буфер логов пуст.")
             return
+
+        lines_to_export = self.buffer
+        filter_active = bool(self.filter_text) or any(not var.get() for var in self.level_vars.values())
+        if filter_active:
+            choice = messagebox.askyesnocancel(
+                "Экспорт",
+                f"Сейчас применён фильтр: показано {self.visible_count} из {len(self.buffer)} строк.\n\n"
+                "Экспортировать только отфильтрованные строки?\n"
+                "«Нет» — экспортировать весь лог целиком.",
+            )
+            if choice is None:
+                return
+            if choice:
+                lines_to_export = [line for line in self.buffer if self.line_visible(line)]
+
         path = filedialog.asksaveasfilename(
             defaultextension=".txt",
             filetypes=[("Текстовый файл", "*.txt"), ("Все файлы", "*.*")],
@@ -433,7 +448,7 @@ class App:
             return
         try:
             with open(path, "w", encoding="utf-8") as f:
-                f.write("\n".join(self.buffer))
+                f.write("\n".join(lines_to_export))
         except OSError as e:
             messagebox.showerror("Экспорт", f"Не удалось сохранить файл: {e}")
         else:
