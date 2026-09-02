@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# PyInstaller build output
+build/
+dist/
+*.spec.bak
+
+# Packaged/zipped binaries
+*.zip
+*.exe
+
+# Captured/exported device logs - may contain real API keys, emails,
+# device identifiers, etc. from whatever app was being debugged.
+ios_log_*.txt
+
+# Editor/OS cruft
+.vscode/
+.idea/
+Thumbs.db
