@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Build windowed exe
+        run: pyinstaller "iOS Log Viewer.spec"
+
+      - name: Build console exe
+        run: pyinstaller iOS_Log_Viewer_console.spec
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/iOS Log Viewer.exe
+            dist/iOS_Log_Viewer_console.exe
+          generate_release_notes: true

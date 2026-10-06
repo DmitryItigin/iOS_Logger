@@ -10,7 +10,9 @@ iOS Log Viewer - минимальный просмотрщик логов с iOS
     python ios_log_viewer.py
 """
 import asyncio
+import os
 import queue
+import sys
 import threading
 import tkinter as tk
 from datetime import datetime
@@ -485,14 +487,30 @@ class App:
         self.root.after(POLL_INTERVAL_MS, self.poll_queues)
 
 
+def _icon_path() -> str:
+    base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base, "assets", "icon.ico")
+
+
 def main():
-    root = tk.Tk()
-    App(root)
     try:
-        import pyi_splash
-        pyi_splash.close()
-    except ImportError:
+        import ctypes
+
+        # Shared across the whole QA-Hub suite (hub + all tools) so Windows
+        # groups their taskbar buttons under one icon, regardless of whether
+        # this was launched via the hub or run standalone.
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("QA-Hub")
+    except (AttributeError, OSError):
         pass
+
+    root = tk.Tk()
+    icon_path = _icon_path()
+    if os.path.exists(icon_path):
+        try:
+            root.iconbitmap(default=icon_path)
+        except tk.TclError:
+            pass  # best-effort -- a missing/odd icon file shouldn't block startup
+    App(root)
     root.mainloop()
 
 
