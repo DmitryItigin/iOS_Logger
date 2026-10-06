@@ -22,7 +22,11 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='iOS Log Viewer',
+    # No spaces -- GitHub sanitizes spaces in uploaded release asset names
+    # inconsistently (dashes via manual web upload, dots via the Actions
+    # release action observed here), making the resulting filename
+    # unpredictable. A space-free name sidesteps that entirely.
+    name='iOS-Log-Viewer',
     icon='assets/icon.ico',
     debug=False,
     bootloader_ignore_signals=False,
