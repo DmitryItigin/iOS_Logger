@@ -34,3 +34,5 @@ jobs:
             dist/iOS-Log-Viewer.exe
             dist/iOS_Log_Viewer_console.exe
           generate_release_notes: true
+          # Tags with a suffix (v1.0.1-test.1) become pre-releases: only a test hub installs them.
+          prerelease: ${{ contains(github.ref_name, '-') }}
