@@ -17,8 +17,9 @@ from pathlib import Path
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
+import qa_theme
+
 from ios_logger.backend import LogBackend
-from ios_logger.theme import apply_theme, load_mode
 from ios_logger.window import APP_NAME, MainWindow
 
 
@@ -40,7 +41,7 @@ def main() -> int:
 
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
-    apply_theme(app, load_mode(APP_NAME))
+    qa_theme.init(app, APP_NAME)
     icon_path = _icon_path()
     if icon_path.exists():
         app.setWindowIcon(QIcon(str(icon_path)))

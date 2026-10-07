@@ -1,11 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_data_files
 
 
 a = Analysis(
     ['ios_log_viewer.py'],
     pathex=[],
     binaries=[],
-    datas=[('assets/icon.ico', 'assets')],
+    datas=[('assets/icon.ico', 'assets')] + collect_data_files("qa_theme"),
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

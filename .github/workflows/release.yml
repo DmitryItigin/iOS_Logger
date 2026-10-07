@@ -18,6 +18,10 @@ jobs:
         with:
           python-version: "3.12"
 
+      # qa-hub-theme is a private repo: let pip's git clone authenticate.
+      - name: Allow pip to clone the private theme repo
+        run: git config --global url."https://x-access-token:${{ secrets.THEME_REPO_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
       - name: Install dependencies
         run: pip install -r requirements.txt pyinstaller
 

@@ -24,27 +24,30 @@ from PySide6.QtWidgets import (
     QWidgetAction,
 )
 
+import qa_theme
+
+from .highlight import LogHighlighter
 from .logic import LEVEL_LABELS, LOG_LEVELS, line_visible
-from .theme import ThemeToggleButton
 from .version import VERSION
 
 APP_NAME = "iOS-Logger"
 POLL_INTERVAL_MS = 100
 FILTER_DEBOUNCE_MS = 150
 VK_F = 0x46  # физическая клавиша F (Windows virtual-key), одинакова в любой раскладке
-SEARCH_ALL_BG = QColor("#ffe58a")
-SEARCH_CURRENT_BG = QColor("#ff9632")
 
 
-def _match_selection(start: int, end: int, document: QTextDocument, color: QColor) -> QTextEdit.ExtraSelection:
+def _match_selection(
+    start: int, end: int, document: QTextDocument, background: str, foreground: str | None = None
+) -> QTextEdit.ExtraSelection:
     selection = QTextEdit.ExtraSelection()
     cursor = QTextCursor(document)
     cursor.setPosition(start)
     cursor.setPosition(end, QTextCursor.KeepAnchor)
     selection.cursor = cursor
     fmt = QTextCharFormat()
-    fmt.setBackground(color)
-    fmt.setForeground(QColor("black"))
+    fmt.setBackground(QColor(background))
+    if foreground:
+        fmt.setForeground(QColor(foreground))
     selection.format = fmt
     return selection
 
@@ -69,6 +72,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f"iOS Log Viewer · {VERSION}")
         self.resize(1000, 600)
         self._build_ui()
+        qa_theme.bus.mode_changed.connect(self._on_mode_changed)
 
         self._filter_timer = QTimer(self, singleShot=True, interval=FILTER_DEBOUNCE_MS)
         self._filter_timer.timeout.connect(self.apply_filter)
@@ -109,10 +113,19 @@ class MainWindow(QMainWindow):
         toolbar.addWidget(self._build_levels_button())
 
         toolbar.addStretch()
-        self.status_label = QLabel("Ожидание устройства...")
-        toolbar.addWidget(self.status_label)
-        toolbar.addWidget(ThemeToggleButton(APP_NAME))
+        toolbar.addWidget(qa_theme.ModeSwitch(size=34))
         root.addLayout(toolbar)
+
+        status_row = QHBoxLayout()
+        status_row.setSpacing(7)
+        self.status_dot = qa_theme.StatusIndicator()
+        self.status_label = QLabel()
+        self.status_label.setProperty("role", "muted")
+        status_row.addWidget(self.status_dot)
+        status_row.addWidget(self.status_label)
+        status_row.addStretch()
+        root.addLayout(status_row)
+        self._set_status("waiting", "Ожидание устройства...")
 
         self.search_frame = self._build_search_bar()
         root.addWidget(self.search_frame)
@@ -121,6 +134,8 @@ class MainWindow(QMainWindow):
         self.text.setReadOnly(True)
         self.text.setLineWrapMode(QPlainTextEdit.NoWrap)
         self.text.setFont(QFont("Consolas", 9))
+        self.text.setObjectName("LogView")
+        self._highlighter = LogHighlighter(self.text.document())
         root.addWidget(self.text, 1)
 
         self.setCentralWidget(central)
@@ -172,15 +187,21 @@ class MainWindow(QMainWindow):
         self.search_count_label.setMinimumWidth(60)
         row.addWidget(self.search_count_label)
         prev_btn = QPushButton("▲")
-        prev_btn.setFixedWidth(36)
+        prev_btn.setFixedSize(36, 36)
+        prev_btn.setProperty("compact", True)
+        prev_btn.setAccessibleName('Предыдущее')
         prev_btn.clicked.connect(self.search_prev)
         row.addWidget(prev_btn)
         next_btn = QPushButton("▼")
-        next_btn.setFixedWidth(36)
+        next_btn.setFixedSize(36, 36)
+        next_btn.setProperty("compact", True)
+        next_btn.setAccessibleName('Следующее')
         next_btn.clicked.connect(self.search_next)
         row.addWidget(next_btn)
         close_btn = QPushButton("✕")
-        close_btn.setFixedWidth(36)
+        close_btn.setFixedSize(36, 36)
+        close_btn.setProperty("compact", True)
+        close_btn.setAccessibleName('Закрыть поиск')
         close_btn.clicked.connect(self.hide_search)
         row.addWidget(close_btn)
         row.addStretch()
@@ -317,7 +338,8 @@ class MainWindow(QMainWindow):
         self.search_scan_pos = self._doc_end()
         document = self.text.document()
         self._match_selections = [
-            _match_selection(start, end, document, SEARCH_ALL_BG) for start, end in self.search_matches
+            _match_selection(start, end, document, qa_theme.tokens()["match_soft"])
+            for start, end in self.search_matches
         ]
         self.refresh_search_highlights()
 
@@ -336,7 +358,8 @@ class MainWindow(QMainWindow):
         document = self.text.document()
         self.search_matches += new_matches
         self._match_selections += [
-            _match_selection(start, end, document, SEARCH_ALL_BG) for start, end in new_matches
+            _match_selection(start, end, document, qa_theme.tokens()["match_soft"])
+            for start, end in new_matches
         ]
         first_match = self.search_current == -1
         if first_match:
@@ -348,7 +371,10 @@ class MainWindow(QMainWindow):
         selections = list(self._match_selections)
         if 0 <= self.search_current < len(self.search_matches):
             start, end = self.search_matches[self.search_current]
-            selections.append(_match_selection(start, end, document, SEARCH_CURRENT_BG))
+            tokens = qa_theme.tokens()
+            selections.append(
+                _match_selection(start, end, document, tokens["match_cur"], tokens["match_cur_text"])
+            )
             if scroll:
                 cursor = QTextCursor(document)
                 cursor.setPosition(start)
@@ -356,6 +382,17 @@ class MainWindow(QMainWindow):
                 self.text.centerCursor()
         self.text.setExtraSelections(selections)
         self.update_search_label()
+
+    def _on_mode_changed(self, _mode: str) -> None:
+        """Highlights bake colours into their selections, so they are rebuilt for the new theme."""
+        self._highlighter.rehighlight()
+        document = self.text.document()
+        soft = qa_theme.tokens()["match_soft"]
+        self._match_selections = [
+            _match_selection(start, end, document, soft) for start, end in self.search_matches
+        ]
+        self.refresh_search_highlights(scroll=False)
+        self._sync_status_dot()
 
     def update_search_label(self) -> None:
         total = len(self.search_matches)
@@ -419,15 +456,24 @@ class MainWindow(QMainWindow):
 
     # --- stream ---
 
+    def _set_status(self, kind: str, text: str) -> None:
+        self._status_kind = kind
+        self.status_label.setText(text)
+        self._sync_status_dot()
+
+    def _sync_status_dot(self) -> None:
+        token = {"connected": "success", "error": "error"}.get(self._status_kind, "warning")
+        self.status_dot.set_state("dot", qa_theme.tokens()[token])
+
     def poll_queues(self) -> None:
         while not self.status_queue.empty():
             kind, value = self.status_queue.get_nowait()
             if kind == "connected":
-                self.status_label.setText(f"Подключено: {value}")
+                self._set_status("connected", f"Подключено: {value}")
             elif kind == "disconnected":
-                self.status_label.setText("Ожидание устройства...")
+                self._set_status("waiting", "Ожидание устройства...")
             elif kind == "error":
-                self.status_label.setText(f"Ошибка: {value}")
+                self._set_status("error", f"Ошибка: {value}")
 
         lines = []
         while not self.line_queue.empty():
