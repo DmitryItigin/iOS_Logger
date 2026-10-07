@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 
 from .logic import LEVEL_LABELS, LOG_LEVELS, line_visible
 from .theme import ThemeToggleButton
+from .version import VERSION
 
 APP_NAME = "iOS-Logger"
 POLL_INTERVAL_MS = 100
@@ -65,7 +66,7 @@ class MainWindow(QMainWindow):
         self.search_scan_pos = 0
         self._match_selections: list[QTextEdit.ExtraSelection] = []
 
-        self.setWindowTitle("iOS Log Viewer")
+        self.setWindowTitle(f"iOS Log Viewer · {VERSION}")
         self.resize(1000, 600)
         self._build_ui()
 

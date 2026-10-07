@@ -21,6 +21,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt pyinstaller
 
+      - name: Write version, baked into the exe
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          "VERSION = `"$version`"" | Set-Content -Path ios_logger/_version.py -Encoding utf8
+
       - name: Build windowed exe
         run: pyinstaller "iOS Log Viewer.spec"
 
