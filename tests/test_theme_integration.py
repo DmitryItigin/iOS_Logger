@@ -34,8 +34,8 @@ def _line_formats(window, text):
     return {(r.start, r.length): r.format.foreground().color().name().upper() for r in block.layout().formats()}
 
 
-def test_mode_switch_replaces_the_toggle_button(window):
-    assert window.findChild(qa_theme.ModeSwitch) is not None
+def test_mode_switch_lives_in_the_settings_gear(window):
+    assert window.findChild(qa_theme.GearButton) is not None
 
 
 def test_error_level_is_tinted_with_the_error_token(window):
@@ -79,10 +79,14 @@ def test_search_buttons_have_accessible_names(window):
     assert {"Предыдущее", "Следующее", "Закрыть поиск"} <= names
 
 
-def test_close_to_tray_checkbox_sits_next_to_the_mode_switch_and_is_off_by_default(window):
+def test_settings_gear_replaces_the_theme_switch_and_holds_theme_and_tray(window):
     from PySide6.QtWidgets import QCheckBox
 
-    box = next(b for b in window.findChildren(QCheckBox) if b.text() == "Закрывать в трей")
-    assert not box.isChecked()
+    gear = window.findChild(qa_theme.GearButton)
+    assert gear is not None and window.findChild(qa_theme.ModeSwitch) is None
+    gear.click()
+    box = next(b for b in gear.popover.findChildren(QCheckBox) if b.text() == "Закрывать в трей")
+    assert not box.isChecked()  # off by default
     box.click()
     assert qa_theme.settings.load_close_to_tray("iOSLogger") is True
+    gear.popover.close()
