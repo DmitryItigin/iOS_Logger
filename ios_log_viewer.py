@@ -29,19 +29,16 @@ def _icon_path() -> Path:
 
 
 def main() -> int:
-    try:
-        import ctypes
-
-        # Shared across the whole QA-Hub suite (hub + all tools) so Windows
-        # groups their taskbar buttons under one icon, regardless of whether
-        # this was launched via the hub or run standalone.
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("QA-Hub")
-    except (AttributeError, OSError):
-        pass
+    # one shared AppUserModelID or one per tool: the hub's "Общая иконка в таскбаре" setting
+    qa_theme.taskbar.apply("iOSLogger")
 
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     qa_theme.init(app, APP_NAME)
+
+    # a second launch (or the hub's "Открыть") asks the running copy to show itself
+    if qa_theme.instance.signal_existing("iOSLogger"):
+        return 0
     icon_path = _icon_path()
     if icon_path.exists():
         app.setWindowIcon(QIcon(str(icon_path)))
@@ -52,6 +49,7 @@ def main() -> int:
     backend = LogBackend(line_queue, status_queue)  # daemon-поток, закроется вместе с процессом
     window.backend = backend
     window.show()
+    qa_theme.instance.listen("iOSLogger", lambda: qa_theme.instance.bring_to_front(window))
     return app.exec()
 
 
