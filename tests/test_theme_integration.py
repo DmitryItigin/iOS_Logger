@@ -77,3 +77,12 @@ def test_search_highlight_colours_follow_the_theme(window):
 def test_search_buttons_have_accessible_names(window):
     names = {b.accessibleName() for b in window.search_frame.findChildren(type(window.pause_btn))}
     assert {"Предыдущее", "Следующее", "Закрыть поиск"} <= names
+
+
+def test_close_to_tray_checkbox_sits_next_to_the_mode_switch_and_is_off_by_default(window):
+    from PySide6.QtWidgets import QCheckBox
+
+    box = next(b for b in window.findChildren(QCheckBox) if b.text() == "Закрывать в трей")
+    assert not box.isChecked()
+    box.click()
+    assert qa_theme.settings.load_close_to_tray("iOSLogger") is True

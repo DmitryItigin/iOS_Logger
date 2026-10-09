@@ -49,6 +49,7 @@ def main() -> int:
     backend = LogBackend(line_queue, status_queue)  # daemon-поток, закроется вместе с процессом
     window.backend = backend
     window.show()
+    qa_theme.tray.install(window, "iOSLogger", "iOS Logger", app.windowIcon())
     qa_theme.instance.listen("iOSLogger", lambda: qa_theme.instance.bring_to_front(window))
     return app.exec()
 

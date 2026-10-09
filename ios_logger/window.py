@@ -113,6 +113,7 @@ class MainWindow(QMainWindow):
         toolbar.addWidget(self._build_levels_button())
 
         toolbar.addStretch()
+        toolbar.addWidget(qa_theme.tray.close_to_tray_checkbox("iOSLogger"))
         toolbar.addWidget(qa_theme.ModeSwitch(size=34))
         root.addLayout(toolbar)
 
