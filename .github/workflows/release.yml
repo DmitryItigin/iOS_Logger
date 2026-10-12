@@ -25,6 +25,15 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt pyinstaller
 
+      # No release without a hand-written patch note: the hub shows it in 'История версий'.
+      - name: Require the patch note
+        run: |
+          $note = "release-notes/${{ github.ref_name }}.md"
+          if (-not (Test-Path $note) -or -not (Get-Content $note -Raw).Trim()) {
+            Write-Error "Missing or empty ${note}: write the patch note before tagging."
+            exit 1
+          }
+
       - name: Write version, baked into the exe
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
@@ -42,6 +51,7 @@ jobs:
           files: |
             dist/iOS-Log-Viewer.exe
             dist/iOS_Log_Viewer_console.exe
-          generate_release_notes: true
+          body_path: release-notes/${{ github.ref_name }}.md
+          generate_release_notes: false
           # Tags with a suffix (v1.0.1-test.1) become pre-releases: only a test hub installs them.
           prerelease: ${{ contains(github.ref_name, '-') }}
