@@ -9,23 +9,17 @@ iOS Log Viewer - минимальный просмотрщик логов с iOS
 Запуск:
     python ios_log_viewer.py
 """
-import os
 import queue
 import sys
-from pathlib import Path
 
-from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 import qa_theme
 
+from ios_logger.version import VERSION
+
 from ios_logger.backend import LogBackend
 from ios_logger.window import APP_NAME, MainWindow
-
-
-def _icon_path() -> Path:
-    base = Path(getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__))))
-    return base / "assets" / "icon.ico"
 
 
 def main() -> int:
@@ -39,9 +33,9 @@ def main() -> int:
     # a second launch (or the hub's "Открыть") asks the running copy to show itself
     if qa_theme.instance.signal_existing("iOSLogger"):
         return 0
-    icon_path = _icon_path()
-    if icon_path.exists():
-        app.setWindowIcon(QIcon(str(icon_path)))
+    icon = qa_theme.app_icons.app_icon("ios-logger", qa_theme.app_icons.is_test_version(VERSION))
+    if not icon.isNull():
+        app.setWindowIcon(icon)
 
     line_queue: queue.Queue = queue.Queue()
     status_queue: queue.Queue = queue.Queue()

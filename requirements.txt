@@ -1,3 +1,3 @@
 pymobiledevice3>=4.0.0
 PySide6>=6.7,<7
-qa-hub-theme @ git+https://github.com/DmitryItigin/qa-hub-theme.git@b8bc56a35f2096113d212c48f88b472f606b898b
+qa-hub-theme @ git+https://github.com/DmitryItigin/qa-hub-theme.git@edc24eab4f7388ab8022ed489b895efca015d10b
